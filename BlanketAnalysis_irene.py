@@ -24,125 +24,107 @@ from plotly.offline import download_plotlyjs, init_notebook_mode,  plot
 from plotly.subplots import make_subplots
 import math
 
+def plot_fig(data, title, mach):
 
 
-
-output=pd.read_csv(r'D:\Research\D8_ready\sorted\B4bSS\output.csv')
-os.chdir(r'D:\Research\D8_ready\sorted\B4bSS')
-
-output.columns
-
-DancerPosition=pd.DataFrame();
-BlanketTention=pd.DataFrame();
-
-
-for ind in output.index:
-    # tmp=list(map(float, output['dancer all'][ind].split('@')))
-    # DancerPosition=pd.concat([DancerPosition,pd.Series(tmp)],axis=1).rename(columns={0:output['timestamp'][ind]})
-    # tmp=list(map(float, output[' blanket all'][ind].split('@')))
-    # BlanketTention=pd.concat([BlanketTention,pd.Series(tmp)],axis=1).rename(columns={0:output['timestamp'][ind]})
-    tmp=list(map(float, output['DancerPositionActual_All'][ind].split('@')))
-    DancerPosition=pd.concat([DancerPosition,pd.Series(tmp)],axis=1).rename(columns={0:output['timestamp'][ind]})
-    tmp=list(map(float, output['BlanketTension_All'][ind].split('@')))
-    BlanketTention=pd.concat([BlanketTention,pd.Series(tmp)],axis=1).rename(columns={0:output['timestamp'][ind]})
-
-DancerPosition = DancerPosition.loc[:,~DancerPosition.columns.duplicated()].copy()
-BlanketTention = BlanketTention.loc[:,~BlanketTention.columns.duplicated()].copy()
-
-
-n = 100
-DancerPosition.drop(index=DancerPosition.index[:n],inplace=True)
-
-BlanketTention.drop(index=BlanketTention.index[:n],inplace=True)
-
-
-DancerPosition=DancerPosition.reset_index(drop=True)
-
-BlanketTention=BlanketTention.reset_index(drop=True)
-
-
-columnsDF= list(BlanketTention.columns)
-
-columnsDF.sort()
-# col=list(BlanketTention.columns)
-
-# a=BlanketTention[col[0]].rolling(5).mean()
-#################################################################
-#################################################################
-#################################################################
-
-figDancerPosition = go.Figure()
-#
-
-
-for col in columnsDF:
-    if len(np.where(DancerPosition[col].isnull() == True)[0]):
-        if np.where(DancerPosition[col].isnull() == True)[0][0]<300:
-            continue
-    figDancerPosition.add_trace(go.Scatter(y=list(DancerPosition[col]-DancerPosition[col][0]),
-                name=str(col)))
-
-
-            
-
-# fig.update_layout(title='ImagePlacement_Right')
-# fig.update_layout(title='ImagePlacement_Left')
-
-figDancerPosition.update_layout(title='DancerPosition')
-
-
-figDancerPosition.update_layout(
-    hoverlabel=dict(
-        namelength=-1
-    )
-)
-
-# datetime object containing current date and time
-now = datetime.now()
-# dd/mm/YY H:M:S
-dt_string = now.strftime("%d_%m_%Y_%H_%M_%S")
-plot(figDancerPosition,auto_play=True,filename="Scale_FRONT_AQM_"+ dt_string +".html")  
-#plot(fig_back,filename="AQM-Back.html")  
-figDancerPosition.show()
-
-
-#################################################################
-#################################################################
-#################################################################
-
-figBlanketTention = go.Figure()
-#
-
-
-for col in columnsDF:
-    if len(np.where(BlanketTention[col].isnull() == True)[0]):
-        if np.where(BlanketTention[col].isnull() == True)[0][0]<300:
-            continue;
-    figBlanketTention.add_trace(go.Scatter(y=list(BlanketTention[col]-BlanketTention[col][0]),
+    fig = go.Figure()
+    columnsDF= list(dictdict[dictitem].columns)
+    columnsDF.sort()
+    for col in columnsDF:
+        if len(np.where(dictdict[dictitem][col].isnull() == True)[0]):
+            if np.where(dictdict[dictitem][col].isnull() == True)[0][0]<300:
+                continue
+        fig.add_trace(go.Scatter(y=list(dictdict[dictitem][col]-dictdict[dictitem][col][0]),
                     name=str(col)))
 
 
-            
 
-# fig.update_layout(title='ImagePlacement_Right')
-# fig.update_layout(title='ImagePlacement_Left')
+    fig.update_layout(title=title)
 
-figBlanketTention.update_layout(title='BlanketTention')
-
-
-figBlanketTention.update_layout(
-    hoverlabel=dict(
-        namelength=-1
+    fig.update_layout(
+        hoverlabel=dict(
+            namelength=-1
+        )
     )
-)
 
-# datetime object containing current date and time
-now = datetime.now()
-# dd/mm/YY H:M:S
-dt_string = now.strftime("%d_%m_%Y_%H_%M_%S")
-plot(figBlanketTention,auto_play=True,filename="Scale_FRONT_AQM_"+ dt_string +".html")  
-#plot(fig_back,filename="AQM-Back.html")  
-figBlanketTention.show()
+    # datetime object containing current date and time
+
+    # dd/mm/YY H:M:S
+    dt_string = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    plot(fig,auto_play=True,filename=f"{mach}_{dt_string}.html")   
+
+def plot_rolling(data, type, winsowSize, mach):
+    fig = go.Figure()
+    #
+    movingAVRBlanketTention=BlanketTention.rolling(winsowSize).mean()
+    columnsDF = movingAVRBlanketTention.columns
+    for col in columnsDF:
+
+        res = list(filter(lambda item: not math.isnan(item), list(movingAVRBlanketTention[col])))
+        if len(res)>300:
+            fig.add_trace(go.Scatter(y=res,
+                            name=col))
+
+
+
+    fig.update_layout(title=f"{mach}_{type} moving AVR window size={winsowSize}")
+
+
+    fig.update_layout(
+        hoverlabel=dict(
+            namelength=-1
+        )
+    )
+
+    # datetime object containing current date and time
+    now = datetime.now()
+    # dd/mm/YY H:M:S
+    dt_string = now.strftime("%d_%m_%Y_%H_%M_%S")
+    plot(fig,auto_play=True,filename="Scale_FRONT_AQM_"+ dt_string +".html")  
+    #plot(fig_back,filename="AQM-Back.html")  
+
+
+
+
+
+dirdir = "D:\Logs\Research\D14 seam open\D14 15.9_15.10 ready with loadCellDiff\sorted\B4bSS"
+output=pd.read_csv(f'{dirdir}\output.csv')
+os.chdir(dirdir)
+mach="D14"
+
+#output.columns
+
+dictdict = {}
+for col in output.columns:
+    if col!="mach" and col!="path" and col!="timestamp" and col not in dictdict:
+        dictdict[col] = pd.DataFrame()
+
+
+for ind, row in output.iterrows():
+    for dictitem in dictdict:
+        tmp=list(map(float, output[dictitem][ind].split('@')))
+        dictdict[dictitem]=pd.concat([dictdict[dictitem],pd.Series(tmp)],axis=1).rename(columns={0:output['timestamp'][ind]})
+
+n = 100
+for dictitem in dictdict:
+    dictdict[dictitem] = dictdict[dictitem].loc[:,~dictdict[dictitem].columns.duplicated()].copy()
+    #dictdict[dictitem].columns.sort_values()
+    dictdict[dictitem].drop(index=dictdict[dictitem].index[:n],inplace=True)
+    dictdict[dictitem]=dictdict[dictitem].reset_index(drop=True)
+
+
+
+
+#################################################################
+#################################################################
+#################################################################
+
+
+#for dictitem in dictdict:
+#    plot_fig(dictdict[dictitem], dictitem, mach)
+    
+
+
 
 ########################################################################
 ########################################################################
@@ -150,8 +132,11 @@ figBlanketTention.show()
 ########################################################################
 ########################################################################
 
-PosTen=pd.DataFrame();
-PosTenCumSum=pd.DataFrame();
+PosTen=pd.DataFrame()
+PosTenCumSum=pd.DataFrame()
+
+DancerPosition = dictdict["DancerPositionActual_All"]
+BlanketTention = dictdict["BlanketTension_All"]
 
 for col in DancerPosition.columns:
     if len(np.where(DancerPosition[col].isnull() == True)[0]):
@@ -224,7 +209,6 @@ now = datetime.now()
 dt_string = now.strftime("%d_%m_%Y_%H_%M_%S")
 plot(figPosTen,auto_play=True,filename="PosTenD8_"+ dt_string +".html")  
 #plot(fig_back,filename="AQM-Back.html")  
-figPosTen.show()
 
 #################################################################
 #################################################################
@@ -274,7 +258,6 @@ now = datetime.now()
 dt_string = now.strftime("%d_%m_%Y_%H_%M_%S")
 plot(figSlop,auto_play=True,filename="MinSlop_"+ dt_string +".html")  
 #plot(fig_back,filename="AQM-Back.html")  
-figSlop.show()
 
 #################################################################
 #################################################################
@@ -311,7 +294,6 @@ now = datetime.now()
 dt_string = now.strftime("%d_%m_%Y_%H_%M_%S")
 plot(figSlopAll,auto_play=True,filename="SlopForReady_"+ dt_string +".html")  
 #plot(fig_back,filename="AQM-Back.html")  
-figSlopAll.show()
 
 # plt.figure()
 # plt.plot(SlopData['Slop'])
@@ -326,51 +308,17 @@ figSlopAll.show()
 
 
 
-
-
-
-
-
-#################################################################
-#################################################################
-#################################################################
-
 winsowSize= 30
-movingAVRBlanketTention=BlanketTention.rolling(winsowSize).mean()
+key = 'BlanketTension_All'
+plot_rolling(dictdict[key], key, winsowSize, mach)
 
 
 
-figBlanketTentionAVR = go.Figure()
-#
+#################################################################
+#################################################################
+#################################################################
 
 
-for col in columnsDF:
-
-    res = list(filter(lambda item: not math.isnan(item), list(movingAVRBlanketTention[col])))
-    if len(res)>300:
-        figBlanketTentionAVR.add_trace(go.Scatter(y=res,
-                        name=col))
 
 
-            
-
-# fig.update_layout(title='ImagePlacement_Right')
-# fig.update_layout(title='ImagePlacement_Left')
-
-figBlanketTentionAVR.update_layout(title='BlanketTention moving AVR window size='+str(winsowSize))
-
-
-figBlanketTentionAVR.update_layout(
-    hoverlabel=dict(
-        namelength=-1
-    )
-)
-
-# datetime object containing current date and time
-now = datetime.now()
-# dd/mm/YY H:M:S
-dt_string = now.strftime("%d_%m_%Y_%H_%M_%S")
-plot(figBlanketTentionAVR,auto_play=True,filename="Scale_FRONT_AQM_"+ dt_string +".html")  
-#plot(fig_back,filename="AQM-Back.html")  
-figBlanketTentionAVR.show()
 
